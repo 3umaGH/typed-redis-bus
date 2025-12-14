@@ -10,7 +10,7 @@ type TestEvents = {
   systemAlert: { level: 'info' | 'warning' | 'error'; message: string }
 }
 
-describe('Redis Wrapper Test Suite', () => {
+describe('Wrapper Test Suite', () => {
   let mockPublish: ReturnType<typeof vi.fn> & PubSubInterface['publish']
   let mockSubscribe: ReturnType<typeof vi.fn> & PubSubInterface['subscribe']
   let mockUnsubscribe: ReturnType<typeof vi.fn> & PubSubInterface['unsubscribe']
@@ -204,15 +204,15 @@ describe('Redis Wrapper Test Suite', () => {
       expect(mockUnsubscribe).toHaveBeenCalledWith('auth-channel')
     })
 
-    it('should work with lazy Redis client initialization', async () => {
-      // Simulate Redis client that's not immediately available
-      let redisClient: PubSubInterface | null = null
+    it('should work with lazy client initialization', async () => {
+      // Simulate PubSub client that's not immediately available
+      let pubSubClient: PubSubInterface | null = null
 
       const lazyClientFunction = vi.fn(() => {
-        if (!redisClient) {
-          redisClient = mockPubSubInterface
+        if (!pubSubClient) {
+          pubSubClient = mockPubSubInterface
         }
-        return redisClient
+        return pubSubClient
       })
 
       const wrapper = wrapPubSub<TestEvents>(lazyClientFunction)
@@ -350,7 +350,7 @@ describe('Redis Wrapper Test Suite', () => {
       await wrapper.subscribe('test-channel', 'userLogin', handler1)
       await wrapper.subscribe('test-channel', 'userLogin', handler2)
 
-      // This creates two separate Redis subscriptions
+      // This creates two separate PubSub subscriptions
       expect(mockSubscribe).toHaveBeenCalledTimes(2)
 
       const subscribeHandler1 = mockSubscribe.mock.calls[0][1]
@@ -370,12 +370,12 @@ describe('Redis Wrapper Test Suite', () => {
       await wrapper.unsubscribe('test-channel', 'userLogin')
 
       // Based on current implementation: removes one 'userLogin' from array
-      // If array still has events, Redis unsubscribe should not be called
-      // If array is empty, Redis unsubscribe should be called
+      // If array still has events, PubSub unsubscribe should not be called
+      // If array is empty, PubSub unsubscribe should be called
 
       // The implementation tracks events, not handlers, so after first unsubscribe:
       // - First unsubscribe removes one 'userLogin', array becomes ['userLogin']
-      // - Array is not empty, so no Redis unsubscribe
+      // - Array is not empty, so no PubSub unsubscribe
       expect(mockUnsubscribe).not.toHaveBeenCalled()
 
       // Second unsubscribe should clean up the channel
